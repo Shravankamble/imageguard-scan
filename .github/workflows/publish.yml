@@ -8,6 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: Shravankamble/imageguard-scan@v0.1
+    - uses: Shravankamble/imageguard-scan@v1
       with:
         name: Shravan
