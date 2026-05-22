@@ -1,0 +1,15 @@
+name: imageguard-scan testing composite action
+on: 
+  push:
+    branches: ["main"]
+
+jobs:
+
+  build:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: Shravankamble/imageguard-scan@v0.1
+      with:
+        name: Shravan
