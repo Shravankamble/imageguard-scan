@@ -12,4 +12,4 @@ runs:
     - name: Deploy build to target
       shell: bash
       run: | 
-        echo hello ${{ input.name }}
+        echo hello ${{ inputs.name }}
