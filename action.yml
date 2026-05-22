@@ -13,3 +13,4 @@ runs:
       shell: bash
       run: | 
         echo hello ${{ inputs.name }}
+        docker --version 2>/dev/null || (echo "Docker is not installed.")
