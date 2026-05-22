@@ -10,7 +10,6 @@ runs:
   using: "composite"
   steps:
     - name: Deploy build to target
-      # run: echo "Deploying build:${{ inputs.build_id }} to target:${{ inputs.deploy_target }}"
       shell: bash
       run: | 
         echo hello ${{ input.name }}
