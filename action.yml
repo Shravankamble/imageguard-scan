@@ -9,8 +9,16 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Deploy build to target
+    - name: checkout the imageguard-scan repository
+      uses: actions/checkout@v6
+      with:
+        repository: ShravanKamble/imageguard-scan
+        ref: v1
+        path: 'imageguard-scan'
+
+    - name: Run the imageguard-scan action
       shell: bash
       run: | 
         echo hello ${{ inputs.name }}
         docker --version
+        ls -la

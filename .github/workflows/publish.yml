@@ -7,14 +7,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: checkout the imageguard-scan repository
-      uses: actions/checkout@v6
-      with:
-        repository: ShravanKamble/imageguard-scan
-        ref: v1
-        path: 'imageguard-scan'
-
     - name: Run the imageguard-scan action
       uses: Shravankamble/imageguard-scan@v1
       with:
         name: Shravan
+    
+    - name: check file structure
+      run: | 
+        ls -la
