@@ -2,9 +2,13 @@ name: imageguard-scan
 description: A GitHub Action to scan container images for vulnerabilities and generate a ImageVulnerability Resource in cluster.
 
 inputs:
-  name:
-    description: 'Name of the person to greet!'
+  image:
+    description: 'The container image to scan for vulnerabilities'
     required: true
+  path:
+    description: 'The path to the folder where the ImageVulnerability Resource would be Generated in the repository'
+    required: false
+    default: 'imageguard-scan-resources/'
 
 runs:
   using: "composite"
@@ -16,9 +20,44 @@ runs:
         ref: v1
         path: 'imageguard-scan'
 
-    - name: Run the imageguard-scan action
+    - name: Trivy Installation
+      id: trivy
+      shell: bash
+      run: |
+        sudo apt-get install wget gnupg
+        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+        echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+        sudo apt-get update
+        sudo apt-get install trivy
+
+        cat << EOF > parser
+        #!/bin/bash
+        trivy --version
+        if [ $? -eq 0 ]; then
+          echo "Trivy installed successfully"
+        else
+          echo "Failed to install Trivy"
+          exit 1
+        fi
+
+        chmod u+x parser
+        ./parser
+
+    - name: Scan the image and generate the ImageVulnerability Resource in the repository.
+      id: scan-and-generate
       shell: bash
       run: | 
-        echo hello ${{ inputs.name }}
-        docker --version
-        ls -la
+        # Generate the vulnerabilities file of the scanned image in json format
+        trivy image $INPUT_IMAGE --format json --output ./imageguard-scan/vulnerabilities.json
+
+        # Parse the vulnerability file and generate the ImageVulnerability Custom Resource in the repository,
+        # for ArgoCD to reconcile the resource in cluster.
+        ./imageguard-scan/parser
+
+        # push the generated resource to the specified path in the repository.
+        git config --global user.name imageguard-scan[bot]
+        git config --global user.email 41898282+github-actions[bot]@users.noreply.github.com
+
+        git add $INPUT_PATH
+        git commit -m "Added ImageVulnerability Resource in the specified path for the ArgoCD to reconcile in cluster."
+        git push

@@ -11,7 +11,6 @@ with open("./result.json") as f:
             if sev in summary:
                 summary[sev] += 1
 
-    if summary.get("HIGH") >= 10:
-        print("lots of vulnerability")
-    else:
-        print("ok to be deployed in production")
+    with open("./resource.yml", "w") as f:
+        f.write(f"apiVersion: imageguard.k8s.io/v1\nkind: ImageVulnerability\nmetadata:\n  name: nginx-latest-vulnerability\nspec:\n  image: nginx:latest\n  summary:\n    critical: {summary.get('CRITICAL')}\n    high: {summary.get('HIGH')}\n    medium: {summary.get('MEDIUM')}\n    low: {summary.get('LOW')}\n")
+        f.close()

@@ -1,0 +1,11 @@
+apiVersion: imageguard.k8s.io/v1
+kind: ImageVulnerability
+metadata:
+  name: nginx-latest-vulnerability
+spec:
+  image: nginx:latest
+  summary:
+    critical: 6
+    high: 18
+    medium: 37
+    low: 5

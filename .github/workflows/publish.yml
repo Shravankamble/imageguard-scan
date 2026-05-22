@@ -10,8 +10,9 @@ jobs:
     - name: Run the imageguard-scan action
       uses: Shravankamble/imageguard-scan@v1
       with:
-        name: Shravan
+        image: nginx:latest
+        path: imageguard-scan-resources/
     
-    - name: check file structure
+    - name: trivy version
       run: | 
-        ls -la
+        trivy --version
