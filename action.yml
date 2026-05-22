@@ -3,7 +3,7 @@ description: A GitHub Action to scan container images for vulnerabilities and ge
 
 inputs:
   name:
-    description: 'Name of the person to greet'
+    description: 'Name of the person to greet!'
     required: true
 
 runs:
