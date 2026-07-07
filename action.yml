@@ -9,6 +9,9 @@ inputs:
     description: 'The path to the folder where the ImageVulnerability Resource would be Generated in the repository'
     required: false
     default: 'imageguard-scan/'
+  token:
+    description: 'The Github Token used to create a Pull Request for generating the Custom Resource.'
+    required: true
 
 runs:
   using: "composite"
@@ -19,6 +22,7 @@ runs:
       env:
         INPUT_IMAGE: ${{ inputs.image }}
         INPUT_PATH: ${{ inputs.path }}
+        INPUT_TOKEN: ${{ inputs.token }}
       run: |
         if [ -z "$INPUT_IMAGE" ]; then
           echo "::error::Empty 'image' field. The image input is required."
@@ -30,6 +34,7 @@ runs:
 
         echo "INPUT_IMAGE=$INPUT_IMAGE" >> $GITHUB_OUTPUT
         echo "INPUT_PATH=$INPUT_PATH" >> $GITHUB_OUTPUT
+        echo "INPUT_TOKEN=$INPUT_TOKEN" >> $GITHUB_OUTPUT
 
     - name: Scan The Image
       uses: aquasecurity/trivy-action@v0.36.0
@@ -50,7 +55,7 @@ runs:
     - name: Commit and Create Pull Request
       uses: peter-evans/create-pull-request@v7
       with:
-        token: ${{ github.token }}
+        token: ${{ steps.validate_inputs.outputs.INPUT_TOKEN }}
         add-paths: ${{ steps.validate_inputs.outputs.INPUT_PATH }}/*
         body: |
           ImageVulnerability Resource "${{ steps.validate_inputs.outputs.INPUT_IMAGE }}-scan.yml" generated in the "${{ steps.validate_inputs.outputs.INPUT_PATH }}" folder.
