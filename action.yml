@@ -13,6 +13,9 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Repository Checkout
+      uses: actions/checkout@v4
+      
     - name: Input Validation
       id: validate_inputs
       shell: bash
