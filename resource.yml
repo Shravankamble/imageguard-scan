@@ -6,6 +6,6 @@ spec:
   image: nginx:latest
   summary:
     critical: 6
-    high: 9
+    high: 13
     medium: 37
     low: 27
