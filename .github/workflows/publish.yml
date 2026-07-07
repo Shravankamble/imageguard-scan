@@ -12,7 +12,3 @@ jobs:
       with:
         image: nginx:latest
         path: imageguard-scan-resources/
-    
-    - name: trivy version
-      run: | 
-        trivy --version
