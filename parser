@@ -1,0 +1,29 @@
+#!/usr/bin/python3
+
+import json
+import os
+
+INPUT_IMAGE = os.getenv("INPUT_IMAGE")
+INPUT_PATH = os.getenv("INPUT_PATH")
+
+image_name = INPUT_IMAGE.lower().replace(':', '-').replace('/', '-')
+
+try: 
+    with open(f"./{INPUT_PATH}/scan-result.json") as f:
+        report = json.load(f)
+
+        summary = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+
+        for result in report.get('Results', []):
+            for vuln in result.get('Vulnerabilities', []):
+                sev = vuln.get('Severity')
+                if sev in summary:
+                    summary[sev] += 1
+        try:            
+            with open(f"./{INPUT_PATH}/{image_name}-scan.yml", "w") as f:
+                f.write(f"apiVersion: imageguard.k8s.io/v1\nkind: ImageVulnerability\nmetadata:\n  name: {image_name}-vulnerability\nspec:\n  image: {INPUT_IMAGE}\n  summary:\n    critical: {summary.get('CRITICAL')}\n    high: {summary.get('HIGH')}\n    medium: {summary.get('MEDIUM')}\n    low: {summary.get('LOW')}\n")
+                f.close()
+        except Exception as e:
+            print(f"::error:: error writing to file : {e}")
+except Exception as e:
+    print(f"::error:: error opening file: {e}")

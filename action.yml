@@ -8,56 +8,52 @@ inputs:
   path:
     description: 'The path to the folder where the ImageVulnerability Resource would be Generated in the repository'
     required: false
-    default: 'imageguard-scan-resources/'
+    default: 'imageguard-scan/'
 
 runs:
   using: "composite"
   steps:
-    - name: checkout the imageguard-scan repository
-      uses: actions/checkout@v6
-      with:
-        repository: ShravanKamble/imageguard-scan
-        ref: v1
-        path: 'imageguard-scan'
-
-    - name: Trivy Installation
-      id: trivy
+    - name: Input Validation
+      id: validate_inputs
       shell: bash
+      env:
+        INPUT_IMAGE: ${{ inputs.image }}
+        INPUT_PATH: ${{ inputs.path }}
       run: |
-        sudo apt-get install wget gnupg
-        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-        echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
-        sudo apt-get update
-        sudo apt-get install trivy
-
-        cat << EOF > parser
-        #!/bin/bash
-        trivy --version
-        if [ $? -eq 0 ]; then
-          echo "Trivy installed successfully"
-        else
-          echo "Failed to install Trivy"
+        if [ -z "$INPUT_IMAGE" ]; then
+          echo "::error::Empty 'image' field. The image input is required."
           exit 1
         fi
+        
+        echo "::notice:: Creating Folder $INPUT_PATH"
+        mkdir -p "$INPUT_PATH"
 
-        chmod u+x parser
-        ./parser
+        echo "INPUT_IMAGE=$INPUT_IMAGE" >> $GITHUB_OUTPUT
+        echo "INPUT_PATH=$INPUT_PATH" >> $GITHUB_OUTPUT
 
-    - name: Scan the image and generate the ImageVulnerability Resource in the repository.
-      id: scan-and-generate
+    - name: Scan The Image
+      uses: aquasecurity/trivy-action@v0.36.0
+      with:
+        image-ref: ${{ steps.validate_inputs.outputs.INPUT_IMAGE }} 
+        format: 'json'
+        output: './${{ steps.validate_inputs.outputs.INPUT_PATH }}/scan-result.json'
+
+    - name: Generate ImageVulnerability Resource
       shell: bash
-      run: | 
-        # Generate the vulnerabilities file of the scanned image in json format
-        trivy image $INPUT_IMAGE --format json --output ./imageguard-scan/vulnerabilities.json
-
-        # Parse the vulnerability file and generate the ImageVulnerability Custom Resource in the repository,
-        # for ArgoCD to reconcile the resource in cluster.
-        ./imageguard-scan/parser
-
-        # push the generated resource to the specified path in the repository.
-        git config --global user.name imageguard-scan[bot]
-        git config --global user.email 41898282+github-actions[bot]@users.noreply.github.com
-
-        git add $INPUT_PATH
-        git commit -m "Add ImageVulnerability Resource in the specified path for the ArgoCD to reconcile in cluster."
-        git push
+      env:
+        INPUT_IMAGE: ${{ steps.validate_inputs.outputs.INPUT_IMAGE }}
+        INPUT_PATH: ${{ steps.validate_inputs.outputs.INPUT_PATH }}
+      run: |
+        chmod u+x "${{ github.action_path }}/parser"
+        "${{ github.action_path }}/parser"
+     
+    - name: Commit and Create Pull Request
+      uses: peter-evans/create-pull-request@v7
+      with:
+        token: ${{ github.token }}
+        add-paths: ${{ steps.validate_inputs.outputs.INPUT_PATH }}/*
+        body: |
+          ImageVulnerability Resource "${{ steps.validate_inputs.outputs.INPUT_IMAGE }}-scan.yml" generated in the "${{ steps.validate_inputs.outputs.INPUT_PATH }}" folder.
+        title: "ImageVulnerability Resource Generated for ${{ steps.validate_inputs.outputs.INPUT_IMAGE }}"
+        committer: "imageguard-scan[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+        branch: "imageguard-scan/${{ github.run_id }}"
