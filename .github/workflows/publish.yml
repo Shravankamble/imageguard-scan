@@ -3,10 +3,6 @@ on:
   push:
     branches: ["main"]
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,3 +15,4 @@ jobs:
       with:
         image: nginx:latest
         path: imageguard-scan-resources
+        token: ${{ secrets.IMAGEGUARD_TOKEN }}
